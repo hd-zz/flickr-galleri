@@ -41,18 +41,19 @@
 		$xml = '<?xml version="1.0" encoding="utf-8" ?>';
 		$xml .= '<context>';
 
-		if(!$prev_photo || $temp_details = $flickr->getPhotoInfo($prev_photo["id"], $prev_photo["secret"]))
+		if(!$prev_photo || ($temp_details = $flickr->getPhotoInfo($prev_photo["id"], $prev_photo["secret"])) === FALSE)
 			$xml .= '<prevphoto id="0" title="" />';
 		else
-			$xml .= '<prevphoto id="'. htmlspecialchars((string)$prev_photo["id"]) .' title="'. htmlspecialchars($temp_details->title) .' " />';
+			$xml .= '<prevphoto id="'. htmlspecialchars((string)$prev_photo["id"]) .'" title="'. htmlspecialchars($temp_details->title) .' " />';
 
-		if(!$next_photo || $temp_details = $flickr->getPhotoInfo($next_photo["id"], $next_photo["secret"]))
+		if(!$next_photo || ($temp_details = $flickr->getPhotoInfo($next_photo["id"], $next_photo["secret"])) === FALSE)
 			$xml .= '<nextphoto id="0" title="" />';
 		else
-			$xml .= '<nextphoto id="'. htmlspecialchars((string)$next_photo["id"]) .' title="'. htmlspecialchars($temp_details->title) .' " />';
+			$xml .= '<nextphoto id="'. htmlspecialchars((string)$next_photo["id"]) .'" title="'. htmlspecialchars($temp_details->title) .' " />';
 
 		$xml .= '</context>';
 
+		echo "$xml\n";
 		$context = simplexml_load_string($xml);
 	}
 
@@ -80,21 +81,21 @@
 	if((string)$context->prevphoto["id"] != "0") {
 ?>
 		<li class="prev">
-			<a href="./?id=<?= $context->prevphoto["id"] ?>&amp;set=<?= $set_id ?>" title="<?= htmlspecialchars($context->prevphoto["title"]) ?>">Föregående</a>
+			<a href="./?id=<?= $context->prevphoto["id"] ?>&amp;set=<?= encodeMachineTagArgument($set_id) ?>" title="<?= htmlspecialchars($context->prevphoto["title"]) ?>">Föregående</a>
 		</li>
 <?php
 	}
 	if((string)$context->nextphoto["id"] != "0") {
 ?>
 		<li class="next">
-			<a href="./?id=<?= $context->nextphoto["id"] ?>&amp;set=<?= $set_id ?>" title="<?= htmlspecialchars($context->nextphoto["title"]) ?>">Nästa</a>
+			<a href="./?id=<?= $context->nextphoto["id"] ?>&amp;set=<?= encodeMachineTagArgument($set_id) ?>" title="<?= htmlspecialchars($context->nextphoto["title"]) ?>">Nästa</a>
 		</li>
 <?php
 	}
 	else {
 ?>
 		<li class="next">
-			<a href="./?set=<?= $set_id ?>" title="<?= htmlspecialchars("Återgå till: ". $photoset_title) ?>">Återgå till galleriet</a>
+			<a href="./?set=<?= encodeMachineTagArgument($set_id) ?>" title="<?= htmlspecialchars("Återgå till: ". $photoset_title) ?>">Återgå till galleriet</a>
 		</li>
 <?php
 	}
