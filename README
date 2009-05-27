@@ -1,0 +1,56 @@
+A simple image gallery based on Flickr's API at http://www.flickr.com/services/api/
+Requires PHP with SimpleXML, cURL and Memcached support.
+
+  -- Noah Williamsson <noah at hd.se> (May 20th, 2009)
+
+
+
+Disclaimer
+==========
+This is the raw code we're using on our site and it was never intended to
+be a generic solution for third parties.
+
+Hence you'll most likely need to modify the HTML and Swedish text in files 
+such as frontpage.php, photoset.php and image.php.
+
+
+
+Short file description
+======================
+
+hdFlickr.php
+- PHP class for handling communication with Flickr's API
+- Caches request responses (using memcached, defaults to 60 seconds)
+- Most API calls return SimpleXML objects or FALSE on error
+
+config.flickr.php
+- Settings (API-key, API secret, username)
+
+index.php
+- Main file for handling gallery requests
+- Initializes memcached
+- Initializes Flickr API access (hdFlickr)
+- Decides what file to include to handle the request ({frontpage, photoset, image}.php)
+
+frontpage.php
+- Lists available gallerys on Flickr
+- Included by index.php
+
+photoset.php
+- Displays thumbnails of all pictures in a gallery
+- Linked to by frontpage.php
+- Included by index.php
+
+image.php
+- Displays a single picture and links to previous/next pictures
+- Displays only public images, not those marked private or for friends/family only
+- Linked to from photoset.php
+- Included by index.php
+
+
+
+TODO
+====
+- AJAX browsing
+- Remove debug comments
+- Utilities to warm up cache
