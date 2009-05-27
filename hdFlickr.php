@@ -142,6 +142,47 @@
 		}
 
 
+		// http://www.flickr.com/services/api/flickr.photos.search.html
+		// Return 'photos' node with 'photo' children
+		function searchPhotosByMachineTags($mt, $privacy_filter = 1) {
+			assert($this->nsid !== FALSE);
+			assert($privacy_filter >= 1 && $privacy_filter <= 5);
+
+			// Sort tags by name and get rid of whitespace
+			$tags = explode(",", $mt);
+			foreach($tags as $tag)
+				$tag = trim($tag);
+			sort($tags);
+			$mt = implode(",", $tags);
+
+
+			// Gör sökning
+			$mc_key = $this->mc_prefix ."machinetags:$mt";
+			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {
+				$xmlobj = $this->apicall('flickr.photos.search',
+								array(  "api_key" => $this->apikey,
+									"machine_tags" => $mt,
+									"privacy_filter" => $privacy_filter,
+									"media" => "photos"
+								)
+				);
+
+				if($xmlobj === FALSE)
+					return FALSE;
+
+				$text = $xmlobj->asXML();
+				if($this->mc)
+					$this->mc->set($mc_key, $text, 0, 300);
+			}
+			else
+				$xmlobj = simplexml_load_string($text);
+
+
+			return $xmlobj->photos;
+		}
+
+
+
 		// http://www.flickr.com/services/api/flickr.photosets.getPhotos.html
 		// Return 'photoset' node with 'photo' children
 		function getPhotosXML($photoset_id) {
@@ -189,29 +230,19 @@
 		}
 
 
-		// Return URL of a photo; if photo_id is NULL, return primary photo
+		// Return URL of a photo (argument is a SimpleXMLElement object)
 		// Size can be '' (500), 's' for small (75), 't' for thumb (100)
-		function getPhotoURL($photoset_id, $photo_id = FALSE, $size = "") {
-			$mc_key = $this->mc_prefix ."photo:url:$photoset_id:";
-			if($photo_id === FALSE)
-				$mc_key .= "primary:$size";
-			else
-				$mc_key .= "$photo_id:$size";
+		function getPhotoURL($photo, $size = "") {
+			assert(is_object($photo));
+			assert(isset($photo["farm"]));
+			assert(isset($photo["server"]));
+			assert(isset($photo["id"]));
+			assert(isset($photo["secret"]));
 
-			if(!$this->mc || $this->flush_cache || ($url = $this->mc->get($mc_key)) === FALSE) {
-				if(($photo = $this->getPhotoXML($photoset_id, $photo_id)) === FALSE) {
-					return FALSE;
-				}
-
-
-				$url = sprintf("http://farm%d.static.flickr.com/%d/%s_%s%s.jpg",
-						$photo["farm"], $photo["server"],
-						$photo["id"], $photo["secret"], 
-						(empty($size)? "": "_$size"));
-
-				if($this->mc)
-					$this->mc->set($mc_key, $url, 0, 300);
-			}
+			$url = sprintf("http://farm%d.static.flickr.com/%d/%s_%s%s.jpg",
+					$photo["farm"], $photo["server"],
+					$photo["id"], $photo["secret"], 
+					(empty($size)? "": "_$size"));
 
 			return $url;
 		}
@@ -243,7 +274,7 @@
 
 
 		// http://www.flickr.com/services/api/flickr.photos.getInfo.html
-		// Returns node with 'prevphoto' and 'nextphoto' children
+		// Returns 'photo' node with detailed information about the photo
 		function getPhotoInfo($photo_id, $secret = FALSE) {
 			$mc_key = $this->mc_prefix ."photo:info:$photo_id";
 			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {

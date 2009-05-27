@@ -49,6 +49,15 @@ image.php
 
 
 
+Machine tags
+============
+
+This gallery supports machinetags.
+Encode 'namespace:predicate=value' as 'namespace-predicate-value' in the set parameter.
+  Example machine tag: mynamespace:submittedpics=marathon2009
+  Example URL: http://example.net/flickr/?set=mynamespace-submittedpics-marathon2009
+
+
 TODO
 ====
 - AJAX browsing

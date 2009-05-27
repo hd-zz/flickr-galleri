@@ -2,28 +2,71 @@
 
 	echo "<!-- Flickr: in image.php -->\n";
 
-	$context = $flickr->getPhotosetContext($set_id, $img_id);
-	$photoset = $flickr->getPhotosetXML($set_id, $img_id);
-	$photos = $flickr->getPhotosXML($set_id, $img_id);
-	$details = $flickr->getPhotoInfo($img_id, $photo["secret"]);
-	$img_url = $flickr->getPhotoURL($set_id, $img_id);
+	$photoset_title = "";
+	if(isMachineTag($set_id)) {
+		$photoset_title = "Taggade bilder";
+		$photos = $flickr->searchPhotosByMachineTags($set_id);
+
+	}
+	else {
+		$photos = $flickr->getPhotosXML($set_id);
+		$photoset = $flickr->getPhotosetXML($set_id);
+		$photoset_title = $photoset->title;
+		$context = $flickr->getPhotosetContext($set_id, $img_id);
+	}
 
 
-	if($context === FALSE || $photoset === FALSE || $photos === FALSE || $details === FALSE || $img_url === FALSE)
+	// Find this photo among returned photos and set its index ($photo_number)
+	$photo_number = 1;
+	$prev_photo = $next_photo = $this_photo = FALSE;
+	foreach($photos->photo as $p) {
+		if($this_photo !== FALSE && $next_photo == FALSE) {
+			$next_photo = $p;
+			break;
+		}
+		else if(!strcmp($img_id, (string)$p["id"])) {
+			$this_photo = $p;
+			continue;
+		}
+
+		$photo_number++;
+		$prev_photo = $p;
+	}
+	$p = $this_photo;
+
+
+
+	// Emulate getPhotosetContext() when $set_id is a machine tag
+	if(isMachineTag($set_id)) {
+		$xml = '<?xml version="1.0" encoding="utf-8" ?>';
+		$xml .= '<context>';
+
+		if(!$prev_photo || $temp_details = $flickr->getPhotoInfo($prev_photo["id"], $prev_photo["secret"]))
+			$xml .= '<prevphoto id="0" title="" />';
+		else
+			$xml .= '<prevphoto id="'. htmlspecialchars((string)$prev_photo["id"]) .' title="'. htmlspecialchars($temp_details->title) .' " />';
+
+		if(!$next_photo || $temp_details = $flickr->getPhotoInfo($next_photo["id"], $next_photo["secret"]))
+			$xml .= '<nextphoto id="0" title="" />';
+		else
+			$xml .= '<nextphoto id="'. htmlspecialchars((string)$next_photo["id"]) .' title="'. htmlspecialchars($temp_details->title) .' " />';
+
+		$xml .= '</context>';
+
+		$context = simplexml_load_string($xml);
+	}
+
+
+
+	// Get URL and details for this pgoto
+	$img_url = $flickr->getPhotoURL($p);
+	$details = $flickr->getPhotoInfo($p["id"], $p["secret"]);
+	
+
+	if($context === FALSE || $photos === FALSE || $details === FALSE || $img_url === FALSE)
 		die($generic_error_msg);
 
 
-
-	echo "<!-- Flickr: photoset claims ". (string)$photoset["photos"] ." number of photos. -->\n";
-	echo "<!-- Flickr: photos claims ". count($photos->photo) ." number of photos. -->\n";
-
-
-	$photo_number = 1;
-	foreach($photos->photo as $p) {
-		if(!strcmp($details["id"], $p["id"]))
-			break;
-		$photo_number++;
-	}
 
 
 	// Generate navigation HTML
@@ -51,7 +94,7 @@
 	else {
 ?>
 		<li class="next">
-			<a href="./?set=<?= $set_id ?>" title="<?= htmlspecialchars("Återgå till: ". $photoset->title) ?>">Återgå till galleriet</a>
+			<a href="./?set=<?= $set_id ?>" title="<?= htmlspecialchars("Återgå till: ". $photoset_title) ?>">Återgå till galleriet</a>
 		</li>
 <?php
 	}
@@ -60,8 +103,12 @@
 <?php
 	$nav_html = ob_get_contents();
 	ob_end_clean();
+	// Done generating navigation
+
+
+
 ?>
-<h1><?= htmlspecialchars($photoset->title) ?></h1>
+<h1><?= htmlspecialchars($photoset_title) ?></h1>
 <?= $nav_html ?>
 <div style="width: 486px; text-align: center">
 	<!--
@@ -70,61 +117,15 @@
 	<img src="<?= htmlspecialchars($img_url) ?>" alt="<?= htmlspecialchars($details->title) ?>" />
 	<p style="padding-left: 5px; text-align: left"><?= preg_replace("@\r\n|\r|\n@", "<br />\n", $details->description) ?></p>
 </div>
-<?= $nav_html ?>
-<h2>Fler bilder i galleriet</h2>
 <?php
-	/*
-	 * Detta är _exakt_ samma som photoset.php, minus några rader i toppen!
-	 *
-	 * Jag har läst in innehållet med ':r photoset.php' i vi och sedan raderat
-	 * alla rader fram till och med <h2>-elementet.
-	 *
-	 */
-
-	$i = 0;
-	$num_photos = count($photos->photo);
-	foreach($photos->photo as $p) {
-
-		$thumb_url = $flickr->getPhotoURL($set_id, $p["id"], "t");
-		if($thumb_url === FALSE)
-			die("Failed to get photoURL for set:". $set_id ." and img:". $p["id"] ."\n");
 
 
-		$ts = $p["dateupload"]; // Unix timestamp
-		if(isset($p["datetaken"]) && !empty($p["datetaken"]))
-			$ts = strtotime($p["datetaken"]); // YYYY-mm-dd HH:MM:SS
-
-		$datestr  = strftime("%d/%m kl %H:%M", $ts);
-		
-
-		$p_class = "";
-		if($i % 4 == 0) {
-			// Börja nytt div-block, och sätt $p_class till 'newgrp'
-			$p_class = ' class="newgrp"';
-?>
-<!-- Flickr: starting new block, on photo <?= ($i+1) ." of ". $num_photos ?> -->
-<div class="list-img-small">
-<?php
-		}
-?>
-	<p<?= $p_class ?>>
-		<a class="thumb name-galleri" href="./?id=<?= $p["id"] ?>&amp;set=<?= $set_id ?>">
-			<img src="<?= $thumb_url ?>" alt="<?= htmlspecialchars($p["title"]) ?>" />
-		</a>
-		<span>
-			<?= $datestr ?>
-		</span>
-	</p>
-<?php
-		$i++;
-		// Avsluta diven om vi visat fyra bilder, eller om alla bilderna är slut
-		if($i % 4 == 0 || $i == $num_photos) {
-?>
-</div>
-<!-- Flickr: ending div-block, current photo is <?= $i ." of ". $num_photos ?> -->
-<?php
-		}
+	// Display navigation once again
+	echo $nav_html;
 
 
-	} // foreach
+	// Display thumbnails of photos in the gallery
+	$photoset_mode = "more";
+	include("photoset.php");
+
 ?>
