@@ -91,7 +91,7 @@
 			assert($this->nsid !== FALSE);
 
 			// Hämta lista på galleri
-			$mc_key = $mc_prefix ."photosets";
+			$mc_key = $this->mc_prefix ."photosets";
 			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {
 				$xmlobj = $this->apicall('flickr.photosets.getList',
 								array(	"api_key" => $this->apikey,
@@ -119,7 +119,7 @@
 			assert($this->nsid !== FALSE);
 
 			// Hämta lista på galleri
-			$mc_key = $mc_prefix ."photosets:$photoset_id";
+			$mc_key = $this->mc_prefix ."photosets:$photoset_id";
 			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {
 				$xmlobj = $this->apicall('flickr.photosets.getInfo',
 								array(	"api_key" => $this->apikey,
@@ -148,7 +148,7 @@
 			assert($this->nsid !== FALSE);
 
 			// Hämta lista på galleri
-			$mc_key = $mc_prefix ."photos:$photoset_id";
+			$mc_key = $this->mc_prefix ."photos:$photoset_id";
 			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {
 				$xmlobj = $this->apicall('flickr.photosets.getPhotos',
 								array(	"api_key"	=> $this->apikey,
@@ -192,7 +192,7 @@
 		// Return URL of a photo; if photo_id is NULL, return primary photo
 		// Size can be '' (500), 's' for small (75), 't' for thumb (100)
 		function getPhotoURL($photoset_id, $photo_id = FALSE, $size = "") {
-			$mc_key = $mc_prefix ."photo:url:$photoset_id:";
+			$mc_key = $this->mc_prefix ."photo:url:$photoset_id:";
 			if($photo_id === FALSE)
 				$mc_key .= "primary:$size";
 			else
@@ -219,7 +219,7 @@
 
 		function getPhotosetContext($photoset_id, $photo_id) {
 			// Hämta lista på galleri
-			$mc_key = $mc_prefix ."photoset:context:$photoset_id:$photo_id";
+			$mc_key = $this->mc_prefix ."photoset:context:$photoset_id:$photo_id";
 			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {
 				$xmlobj = $this->apicall('flickr.photosets.getContext',
 								array(	"api_key"	=> $this->apikey,
@@ -245,7 +245,7 @@
 		// http://www.flickr.com/services/api/flickr.photos.getInfo.html
 		// Returns node with 'prevphoto' and 'nextphoto' children
 		function getPhotoInfo($photo_id, $secret = FALSE) {
-			$mc_key = $mc_prefix ."photo:info:$photo_id";
+			$mc_key = $this->mc_prefix ."photo:info:$photo_id";
 			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {
 
 				$params = array(
