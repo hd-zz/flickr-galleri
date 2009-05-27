@@ -1,26 +1,24 @@
 <?php
+	require_once 'config.flickr.php';
+	require_once 'hdFlickr.php';
+
 	// UTF-8
 	mb_internal_encoding("UTF-8");
 	header("Content-Type: text/html; charset=utf-8");
 
 	echo "<!-- Flickr: in index.php -->\n";
 
+
+	// Memcache
+	$mc = NULL;
+	if(class_exists("Memcache")) {
+		$mc = new Memcache;
+		if(!@$mc->connect("localhost", 11211))
+			$mc = NULL;
+	}
 ?>
 <div id="flickr-galleri">
 <?php
-
-
-	require_once 'config.flickr.php';
-	require_once 'hdFlickr.php';
-
-
-	// Memcache
-	$mc_prefix = "flickr:";
-	$mc = new Memcache;
-	if(!$mc->connect("localhost", 11211)) {
-		$mc = NULL;
-	}
-
 
 
 	$flickr = new hdFlickr($api_key, $api_secret, $flickr_username, $mc);
