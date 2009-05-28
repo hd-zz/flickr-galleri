@@ -116,7 +116,9 @@
 	<h2 style="text-align: center"><?= htmlspecialchars($details->title, ENT_NOQUOTES) ?></h2>
 	-->
 	<img src="<?= htmlspecialchars($img_url) ?>" alt="<?= htmlspecialchars($details->title) ?>" />
-	<p style="padding-left: 5px; text-align: left"><?= preg_replace("@\r\n|\r|\n@", "<br />\n", $details->description) ?></p>
+	<p style="padding-left: 5px; text-align: left"><?= preg_replace("@\r\n|\r|\n@", "<br />\n", $details->description) ?>
+	<span style="float: right; clear: left; padding: 2px">Psst! Bilden finns också på <a href="http://flickr.com/photos/<?= htmlspecialchars($flickr->getNsid() ."/". (string)$p["id"]) ?>" onclick="return HD.se.externalize(this)">Flickr</a></span>
+	</p>
 </div>
 <?php
 

@@ -143,6 +143,11 @@
 		}
 
 
+		function getNsid() {
+			return $this->nsid;
+		}
+
+
 		function apicall($method, $params) {
 			$this->last_api_method = $method;
 			$this->last_api_params = $params;
