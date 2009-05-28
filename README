@@ -47,6 +47,11 @@ image.php
 - Linked to from photoset.php
 - Included by index.php
 
+refresh.php
+- Command line script to refresh request response caches for  changed photosets
+- Can also force a refresh if the script is given an argument
+- Needed due to aggressive cache defaults in hdFlickr.php ($mc_ttl), 
+  especially when photosets are currently being updated (i.e, during events)
 
 
 Machine tags
@@ -62,4 +67,3 @@ TODO
 ====
 - AJAX browsing
 - Remove debug comments
-- Utilities to warm up cache
