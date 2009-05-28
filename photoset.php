@@ -5,6 +5,7 @@
 
 
 	$title = "";
+	$desc = "";
 	if(isMachineTag($set_id)) {
 		$photos = $flickr->searchPhotosByMachineTags($set_id);
 		$title = "Taggade bilder";
@@ -13,6 +14,7 @@
 		$photos = $flickr->getPhotosXML($set_id);
 		$photoset = $flickr->getPhotosetXML($set_id);
 		$title = $photoset->title;
+		$desc = $photoset->description;
 	}
 
 
@@ -24,6 +26,8 @@
 		case "default":
 			echo "<h1>Galleri</h1>\n";
 			echo "<h2>". htmlspecialchars($title, ENT_NOQUOTES) ."</h2>\n";
+			if(!empty($desc))
+				echo "<p>". htmlspecialchars($desc, ENT_NOQUOTES) ."</p>\n";
 			break;
 
 		case "more":
