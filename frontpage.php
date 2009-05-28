@@ -25,9 +25,9 @@
 
 			$num_images_text = count($photoset_photos->photo);
 			if($num_images_text != 1)
-				$num_images_text .= "bilder";
+				$num_images_text .= " bilder";
 			else
-				$num_images_text .= "bild";
+				$num_images_text .= " bild";
 		}
 
 ?>
