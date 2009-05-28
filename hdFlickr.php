@@ -9,11 +9,14 @@
 		private $apisecret;
 		private $username;
 		private $nsid;
-	
+		private $last_api_method;
+		private $last_api_params;
+
 		// Caching (memcache)
 		private $mc;
 		private $mc_prefix;
 		private $flush_cache;
+		private $mc_ttl;
 
 		private $curl;
 
@@ -21,9 +24,12 @@
 			$this->apikey = $key;
 			$this->apisecret = $secret;
 			$this->username = $username;
+			$this->last_api_method = "<none>";
+			$this->last_api_params = array();
 
 			$this->mc = $mc;
 			$this->mc_prefix = "flickr";
+			$this->mc_ttl = 3600 * 24;
 			$this->flush_cache = FALSE;
 
 			$this->nsid = FALSE;
@@ -35,33 +41,11 @@
 		}
 
 
-		function apicall($method, $params) {
-			$url = "http://api.flickr.com/services/rest/?method=";
-			$url .= rawurlencode($method) ."&";
-			foreach($params as $k => $v)
-				$url .= rawurlencode($k) ."=". $v ."&";
-			$url = trim($url, "&");
-
-			curl_setopt($this->curl, CURLOPT_URL, $url);
-			$data = curl_exec($this->curl);
-			$xml = simplexml_load_string($data);
-
-
-
-			if($xml["stat"] != "ok") {
-				$this->errorCode = $xml->err["code"];
-				$this->errorMsg = $xml->err["msg"];
-				return FALSE;
-			}
-
-			return $xml;
-		}
-
-
 		function initialize() {
 			$mc_key = $this->mc_prefix . "nsid";
 
 			if(!$this->mc || $this->flush_cache || ($this->nsid = $this->mc->get($mc_key)) === FALSE) {
+				$this->logCacheMiss();
 				$xml = $this->apicall('flickr.people.findByUsername',
 								array(	"api_key" => $this->apikey,
 									"username" => $this->username,
@@ -75,10 +59,12 @@
 				if($this->mc)
 					$this->mc->set($mc_key, $this->nsid);
 			}
+			else {
+				$this->logCacheHit();
+			}
 
 			return TRUE;
 		}
-
 
 
 		function useCache($use = TRUE) {
@@ -86,13 +72,112 @@
 		}
 
 
+		function logCacheHit() {
+			if(!$this->mc || $this->flush_cache)
+				return;
+
+
+			$mc_key = $this->mc_prefix . "stats:cache_hits";
+			if(@$this->mc->increment($mc_key) === FALSE)
+				$this->mc->set($mc_key, 1);
+		}
+
+
+		function logCacheMiss() {
+			if(!$this->mc || $this->flush_cache)
+				return;
+
+
+			$mc_key = $this->mc_prefix . "stats:cache_misses";
+			if(@$this->mc->increment($mc_key) === FALSE)
+				$this->mc->set($mc_key, 1);
+		}
+
+
+		function logAPIRequest() {
+			if(($fd = @fopen("/tmp/flickr.log", "at")) !== FALSE) {
+				$line = strftime("%Y-%m-%d %H:%M:%S");
+				$line .= "\t". $this->last_api_method;
+				$params = array();
+				foreach($this->last_api_params as $k => $v)
+					$params[] = "$k=$v";
+				$line .= "\t". implode(";", $params);
+				$line .= "\n";
+				fwrite($fd, $line);
+				fclose($fd);
+			}
+
+			if(!$this->mc)
+				return;
+
+			$mc_key = $this->mc_prefix . "stats:requests";
+			if(@$this->mc->increment($mc_key) === FALSE)
+				$this->mc->set($mc_key, 1);
+		}
+
+
+		function getStats() {
+			if(!$this->mc)
+				return FALSE;
+
+			$ret = array();
+
+
+			if(($value = $this->mc->get($this->mc_prefix ."stats:requests")) !== FALSE)
+				$ret["requests"] = $value;
+			else
+				$ret["requests"] = -1;
+
+			if(($value = $this->mc->get($this->mc_prefix ."stats:cache_hits")) !== FALSE)
+				$ret["cache_hits"] = $value;
+			else
+				$ret["cache_hits"] = -1;
+
+			if(($value = $this->mc->get($this->mc_prefix ."stats:cache_misses")) !== FALSE)
+				$ret["cache_misses"] = $value;
+			else
+				$ret["cache_misses"] = -1;
+
+
+			return $ret;
+		}
+
+
+		function apicall($method, $params) {
+			$this->last_api_method = $method;
+			$this->last_api_params = $params;
+
+			$url = "http://api.flickr.com/services/rest/?method=";
+			$url .= rawurlencode($method) ."&";
+			foreach($params as $k => $v)
+				$url .= rawurlencode($k) ."=". $v ."&";
+			$url = trim($url, "&");
+
+			curl_setopt($this->curl, CURLOPT_URL, $url);
+			$data = curl_exec($this->curl);
+			$this->logAPIRequest();
+
+
+			$xml = simplexml_load_string($data);
+			if($xml["stat"] != "ok") {
+				$this->errorCode = $xml->err["code"];
+				$this->errorMsg = $xml->err["msg"];
+				return FALSE;
+			}
+
+			return $xml;
+		}
+
+
 		// Return 'photosets' node with 'photoset' children
+		// http://www.flickr.com/services/api/flickr.photosets.getList.html
 		function getPhotosetsXML() {
 			assert($this->nsid !== FALSE);
 
 			// Hämta lista på galleri
 			$mc_key = $this->mc_prefix ."photosets";
 			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {
+				$this->logCacheMiss();
 				$xmlobj = $this->apicall('flickr.photosets.getList',
 								array(	"api_key" => $this->apikey,
 									"user_id" => $this->nsid
@@ -104,10 +189,12 @@
 
 				$text = $xmlobj->asXML();
 				if($this->mc)
-					$this->mc->set($mc_key, $text, 0, 300);
+					$this->mc->set($mc_key, $text, 0, $this->mc_ttl);
 			}
-			else
+			else {
+				$this->logCacheHit();
 				$xmlobj = simplexml_load_string($text);
+			}
 
 			return $xmlobj->photosets;
 		}
@@ -121,6 +208,7 @@
 			// Hämta lista på galleri
 			$mc_key = $this->mc_prefix ."photosets:$photoset_id";
 			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {
+				$this->logCacheMiss();
 				$xmlobj = $this->apicall('flickr.photosets.getInfo',
 								array(	"api_key" => $this->apikey,
 									"photoset_id" => $photoset_id
@@ -132,10 +220,12 @@
 
 				$text = $xmlobj->asXML();
 				if($this->mc)
-					$this->mc->set($mc_key, $text, 0, 300);
+					$this->mc->set($mc_key, $text, 0, $this->mc_ttl);
 			}
-			else
+			else {
+				$this->logCacheHit();
 				$xmlobj = simplexml_load_string($text);
+			}
 
 
 			return $xmlobj->photoset;
@@ -159,6 +249,7 @@
 			// Gör sökning
 			$mc_key = $this->mc_prefix ."machinetags:$mt";
 			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {
+				$this->logCacheMiss();
 				$xmlobj = $this->apicall('flickr.photos.search',
 								array(  "api_key" => $this->apikey,
 									"machine_tags" => $mt,
@@ -172,10 +263,12 @@
 
 				$text = $xmlobj->asXML();
 				if($this->mc)
-					$this->mc->set($mc_key, $text, 0, 300);
+					$this->mc->set($mc_key, $text, 0, $this->mc_ttl);
 			}
-			else
+			else {
+				$this->logCacheHit();
 				$xmlobj = simplexml_load_string($text);
+			}
 
 
 			return $xmlobj->photos;
@@ -191,6 +284,7 @@
 			// Hämta lista på galleri
 			$mc_key = $this->mc_prefix ."photos:$photoset_id";
 			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {
+				$this->logCacheMiss();
 				$xmlobj = $this->apicall('flickr.photosets.getPhotos',
 								array(	"api_key"	=> $this->apikey,
 									"photoset_id"	=> $photoset_id,
@@ -204,10 +298,12 @@
 
 				$text = $xmlobj->asXML();
 				if($this->mc)
-					$this->mc->set($mc_key, $text, 0, 300);
+					$this->mc->set($mc_key, $text, 0, $this->mc_ttl);
 			}
-			else
+			else {
+				$this->logCacheHit();
 				$xmlobj = simplexml_load_string($text);
+			}
 
 
 			return $xmlobj->photoset;
@@ -252,6 +348,7 @@
 			// Hämta lista på galleri
 			$mc_key = $this->mc_prefix ."photoset:context:$photoset_id:$photo_id";
 			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {
+				$this->logCacheMiss();
 				$xmlobj = $this->apicall('flickr.photosets.getContext',
 								array(	"api_key"	=> $this->apikey,
 									"photoset_id"	=> $photoset_id,
@@ -264,10 +361,12 @@
 
 				$text = $xmlobj->asXML();
 				if($this->mc)
-					$this->mc->set($mc_key, $text, 0, 300);
+					$this->mc->set($mc_key, $text, 0, $this->mc_ttl);
 			}
-			else
+			else {
+				$this->logCacheHit();
 				$xmlobj = simplexml_load_string($text);
+			}
 
 			return $xmlobj;
 		}
@@ -278,6 +377,7 @@
 		function getPhotoInfo($photo_id, $secret = FALSE) {
 			$mc_key = $this->mc_prefix ."photo:info:$photo_id";
 			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {
+				$this->logCacheMiss();
 
 				$params = array(
 						"api_key"	=> $this->apikey,
@@ -292,10 +392,12 @@
 
 				$text = $xmlobj->asXML();
 				if($this->mc)
-					$this->mc->set($mc_key, $text, 0, 300);
+					$this->mc->set($mc_key, $text, 0, $this->mc_ttl);
 			}
-			else
+			else {
+				$this->logCacheHit();
 				$xmlobj = simplexml_load_string($text);
+			}
 
 			return $xmlobj->photo;
 		}
