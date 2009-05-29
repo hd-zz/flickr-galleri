@@ -33,7 +33,8 @@
 			return $set_id;
 
 		$temp = explode("-", $set_id, 3);
-		assert(count($temp) == 3);
+		if(count($temp) != 3)
+			return FALSE;
 
 		return $temp[0] .":". $temp[1] ."=". $temp[2];
 	}
@@ -71,12 +72,14 @@
 
 	if(isset($_GET["id"])) {
 		$img_id = $_GET["id"];
-		$set_id = decodeMachineTagArgument($_GET["set"]);
+		if(($set_id = decodeMachineTagArgument($_GET["set"])) === FALSE)
+			die("Invalid parameter 'set'");
 
 		include("image.php");
 	}
 	else if(isset($_GET["set"])) {
-		$set_id = decodeMachineTagArgument($_GET["set"]);
+		if(($set_id = decodeMachineTagArgument($_GET["set"])) === FALSE)
+			die("Invalid parameter 'set'");
 
 		include("photoset.php");
 	}
@@ -85,12 +88,14 @@
 		for($argc = 1; $argc < count($argv) + 1; $argc += 2) {
 			if(!strcmp($argv[$argc], "id") && $argc < count($argv) + 2) {
 				$img_id = $argv[$argc + 1];
-				$set_id = decodeMachineTagArgument($argv[$argc + 2]);
+				if(($set_id = decodeMachineTagArgument($argv[$argc + 2])) === FALSE)
+					die("Invalid parameter 'set'");
 
 				include("image.php");
 			}
 			else if(!strcmp($argv[$argc], "set")) {
-				$set_id = decodeMachineTagArgument($argv[$argc + 1]);
+				if(($set_id = decodeMachineTagArgument($argv[$argc + 1])) === FALSE)
+					die("Invalid parameter 'set'");
 		
 				include("photoset.php");
 			}
