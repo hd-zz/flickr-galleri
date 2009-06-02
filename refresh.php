@@ -16,7 +16,15 @@
 
 
 	$force_refresh = FALSE;
-	if($argc > 1) {
+	if($argc > 1 && (!strcasecmp($argv[1], "-h") || !strcasecmp("--help"))) {
+		echo "This utility script refreshes the internal memcached-based cache.\n";
+		echo "To refresh changed (i.e, diffrent number of images) photosets:\n";
+		echo "  \$ php refresh.php\n";
+		echo "To refresh all available photosets:\n";
+		echo "  \$ php refresh.php all\n";
+		echo "\n";
+	}
+	else if($argc > 1) {
 		echo "* Forcing refresh of cached data for all photosets and their photos\n";
 		$force_refresh = TRUE;
 	}
