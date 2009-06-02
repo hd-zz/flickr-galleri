@@ -1,9 +1,4 @@
 <?php
-
-	echo "<!-- Flickr: in photoset.php -->\n";
-
-
-
 	$title = "";
 	$desc = "";
 	if(isMachineTag($set_id)) {
@@ -70,7 +65,6 @@
 			// Börja nytt div-block, och sätt $p_class till 'newgrp'
 			$p_class = ' class="newgrp"';
 ?>
-<!-- Flickr: starting new block, on photo <?= ($i+1) ." of ". $num_photos ?> -->
 <div class="list-img-small">
 <?php
 		}
@@ -92,7 +86,6 @@
 		if($i % 4 == 0 || $i == $num_photos) {
 ?>
 </div>
-<!-- Flickr: ending div-block, current photo is <?= $i ." of ". $num_photos ?> -->
 <?php
 		}	// if last photo in row, or final photo
 

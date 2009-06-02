@@ -1,7 +1,4 @@
 <?php
-
-	echo "<!-- Flickr: in image.php -->\n";
-
 	$photoset_title = "";
 	if(isMachineTag($set_id)) {
 		$photoset_title = "Taggade bilder";
@@ -130,5 +127,4 @@
 	// Display thumbnails of photos in the gallery
 	$photoset_mode = "more";
 	include("photoset.php");
-
 ?>
