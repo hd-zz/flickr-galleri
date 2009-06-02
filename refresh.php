@@ -16,7 +16,7 @@
 
 
 	$force_refresh = FALSE;
-	if($argc > 1 && (!strcasecmp($argv[1], "-h") || !strcasecmp("--help"))) {
+	if($argc > 1 && (!strcasecmp($argv[1], "-h") || !strcasecmp($argv[1], "--help"))) {
 		echo "This utility script refreshes the internal memcached-based cache.\n";
 		echo "To refresh changed (i.e, diffrent number of images) photosets:\n";
 		echo "  \$ php refresh.php\n";
