@@ -20,7 +20,7 @@ Short file description
 
 hdFlickr.php
 - PHP class for handling communication with Flickr's API
-- Caches request responses (using memcached, defaults to 60 seconds)
+- Caches request responses (using memcached, defaults to 24h)
 - Most API calls return SimpleXML objects or FALSE on error
 
 config.flickr.php
@@ -49,7 +49,7 @@ image.php
 
 refresh.php
 - Command line script to refresh request response caches for  changed photosets
-- Can also force a refresh if the script is given an argument
+- Can also force a refresh of all available photosets if the script is given an argument
 - Needed due to aggressive cache defaults in hdFlickr.php ($mc_ttl), 
   especially when photosets are currently being updated (i.e, during events)
 
@@ -57,7 +57,7 @@ refresh.php
 Machine tags
 ============
 
-This gallery supports machinetags.
+This gallery supports machine tags.
 Encode 'namespace:predicate=value' as 'namespace-predicate-value' in the set parameter.
   Example machine tag: mynamespace:submittedpics=marathon2009
   Example URL: http://example.net/flickr/?set=mynamespace-submittedpics-marathon2009
@@ -65,5 +65,7 @@ Encode 'namespace:predicate=value' as 'namespace-predicate-value' in the set par
 
 TODO
 ====
+
 - AJAX browsing
 - Remove debug comments
+- White- or black-listing of photos in machine tag-based galleries
