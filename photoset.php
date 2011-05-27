@@ -30,6 +30,8 @@
 			break;
 	}
 
+	if($photos !== FALSE) {
+
 
 	// List all photos available
 	$i = 0;
@@ -91,4 +93,11 @@
 
 
 	} // foreach
+
+	}
+	else {
+?>
+	<p>Hittade inte albumet. Det kan ha tagits bort.</p>
+<?php
+	}
 ?>
