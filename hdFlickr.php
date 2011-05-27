@@ -205,9 +205,15 @@
 		}
 
 
-		// http://www.flickr.com/services/api/flickr.photosets.getInfo.html
-		// Return 'photoset' node describing the photoset (title and description)
-		function getPhotosetXML($photoset_id) {
+		/**
+		 * Return 'photoset' node describing the photoset (title and description)
+		 * http://www.flickr.com/services/api/flickr.photosets.getInfo.html
+		 *
+		 * @param $photoset_id Photoset ID
+		 *
+		 * @return XML-node
+		 */
+		function getPhotosetXML($photoset_id, $offset = 0, $limit = 0) {
 			assert($this->nsid !== FALSE);
 
 			// Hämta lista på galleri
@@ -281,20 +287,30 @@
 
 
 
-		// http://www.flickr.com/services/api/flickr.photosets.getPhotos.html
-		// Return 'photoset' node with 'photo' children
-		function getPhotosXML($photoset_id) {
+		/**
+		 * Return 'photoset' node with 'photo' children
+		 * http://www.flickr.com/services/api/flickr.photosets.getPhotos.html
+		 *
+		 * @param $photoset_id Photoset ID
+		 * @param $page OPTIONAL: Page (1..N)
+		 * @param $per_page OPTIONAL: Photos per page (1..500)
+		 *
+		 * @return XML-node
+		 */
+		function getPhotosXML($photoset_id, $per_page = 500, $page = 1) {
 			assert($this->nsid !== FALSE);
 
 			// Hämta lista på galleri
-			$mc_key = $this->mc_prefix ."photos:$photoset_id";
+			$mc_key = $this->mc_prefix ."photos:$photoset_id:$per_page:$page";
 			if(!$this->mc || $this->flush_cache || ($text = $this->mc->get($mc_key)) === FALSE) {
 				$this->logCacheMiss();
 				$xmlobj = $this->apicall('flickr.photosets.getPhotos',
 								array(	"api_key"	=> $this->apikey,
 									"photoset_id"	=> $photoset_id,
 									"extras"	=> "date_upload,date_taken,last_update",
-									"privacy_filter"=> 1 /* only public photos */
+									"privacy_filter"=> 1, /* only public photos */
+									'per_page' => $per_page,
+									'page' => $page
 								)
 				);
 

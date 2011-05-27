@@ -13,4 +13,5 @@
 	$generic_error_msg = "<p>Ett tekniskt problem uppstod vid hämtning av data från Flickr.com.<br />";
 	$generic_error_msg .= "Vänta en stund och försök igen. Om problemet kvarstår, kontakta webmaster@example.net</p>";
 
+	$photos_per_page = 200;
 ?>
