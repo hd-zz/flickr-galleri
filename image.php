@@ -9,8 +9,8 @@
 
 	}
 	else {
-		$photos = $flickr->getPhotosXML($set_id);
 		$photoset = $flickr->getPhotosetXML($set_id);
+		$photos = $flickr->getPhotosXML($set_id);
 		$photoset_title = $photoset->title;
 		$context = $flickr->getPhotosetContext($set_id, $img_id);
 	}
@@ -81,23 +81,46 @@
 		</li>
 <?php
 	if((string)$context->prevphoto["id"] != "0") {
+		$params = array(
+			'id='. urlencode((string)$context->prevphoto["id"]),
+			'set='. encodeMachineTagArgument($set_id)
+		);
+		if($page > 1)
+			$params[] = 'p='. urlencode($page);
+
+		$link = './?'. implode('&', $params);
 ?>
 		<li class="prev">
-			<a href="./?id=<?= $context->prevphoto["id"] ?>&amp;set=<?= encodeMachineTagArgument($set_id) ?>" title="<?= htmlspecialchars($context->prevphoto["title"]) ?>">Föregående</a>
+			<a href="<?php echo htmlspecialchars($link) ?>" title="<?= htmlspecialchars($context->prevphoto["title"]) ?>">Föregående</a>
 		</li>
 <?php
 	}
 	if((string)$context->nextphoto["id"] != "0") {
+		$params = array(
+			'id='. urlencode((string)$context->prevphoto["id"]),
+			'set='. encodeMachineTagArgument($set_id)
+		);
+		if($page > 1)
+			$params[] = 'p='. urlencode($page);
+
+		$link = './?'. implode('&', $params);
 ?>
 		<li class="next">
-			<a href="./?id=<?= $context->nextphoto["id"] ?>&amp;set=<?= encodeMachineTagArgument($set_id) ?>" title="<?= htmlspecialchars($context->nextphoto["title"]) ?>">Nästa</a>
+			<a href="<?php echo htmlspecialchars($link) ?>" title="<?= htmlspecialchars($context->nextphoto["title"]) ?>">Nästa</a>
 		</li>
 <?php
 	}
 	else {
+		$params = array(
+			'set='. encodeMachineTagArgument($set_id)
+		);
+		if($page > 1)
+			$params[] = 'p='. urlencode($page);
+
+		$link = './?'. implode('&', $params);
 ?>
 		<li class="next">
-			<a href="./?set=<?= encodeMachineTagArgument($set_id) ?>" title="<?= htmlspecialchars("Återgå till: ". $photoset_title) ?>">Återgå till galleriet</a>
+			<a href="<?php echo htmlspecialchars($link) ?>" title="<?= htmlspecialchars("Återgå till: ". $photoset_title) ?>">Återgå till galleriet</a>
 		</li>
 <?php
 	}
