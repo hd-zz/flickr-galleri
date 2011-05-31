@@ -3,6 +3,9 @@
 	echo "<!-- Flickr: in image.php -->\n";
 
 	$photoset_title = "";
+
+	$num_pages = 0;
+	$num_photos_total = 0;
 	if(isMachineTag($set_id)) {
 		$photoset_title = "Taggade bilder";
 		$photos = $flickr->searchPhotosByMachineTags($set_id);
@@ -10,8 +13,9 @@
 	}
 	else {
 		$photoset = $flickr->getPhotosetXML($set_id);
-		$photos = $flickr->getPhotosXML($set_id);
-		$photoset_title = $photoset->title;
+		$num_photos_total = (string)$photoset['photos'];
+		$num_pages = ceil($num_photos_total / $photos_per_page);
+		$photos = $flickr->getPhotosXML($set_id, $photos_per_page, $page);
 		$context = $flickr->getPhotosetContext($set_id, $img_id);
 	}
 
@@ -32,6 +36,7 @@
 		$photo_number++;
 		$prev_photo = $p;
 	}
+
 	$p = $this_photo;
 
 
@@ -77,7 +82,7 @@
 ?>
 	<ul class="nav-offset-alt">
 		<li class="current">
-		Bild <strong><?= $photo_number ?></strong> av <strong><?= count($photos->photo) ?></strong>
+		Bild <strong><?php echo ((($page - 1) * $photos_per_page) + $photo_number) ?></strong> av <strong><?php echo $num_photos_total ?></strong>
 		</li>
 <?php
 	if((string)$context->prevphoto["id"] != "0") {
