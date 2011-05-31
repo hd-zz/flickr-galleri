@@ -2,7 +2,7 @@
 
 	echo "<!-- Flickr: in image.php -->\n";
 
-	$photoset_title = "";
+	$photoset_title = '';
 
 	$num_pages = 0;
 	$num_photos_total = 0;
@@ -13,6 +13,7 @@
 	}
 	else {
 		$photoset = $flickr->getPhotosetXML($set_id);
+		$photoset_title = (string)$photoset->title;
 		$num_photos_total = (string)$photoset['photos'];
 		$num_pages = ceil($num_photos_total / $photos_per_page);
 		$photos = $flickr->getPhotosXML($set_id, $photos_per_page, $page);
@@ -119,8 +120,6 @@
 		$params = array(
 			'set='. encodeMachineTagArgument($set_id)
 		);
-		if($page > 1)
-			$params[] = 'p='. urlencode($page);
 
 		$link = './?'. implode('&', $params);
 ?>
