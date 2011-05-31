@@ -90,8 +90,13 @@
 			'id='. urlencode((string)$context->prevphoto["id"]),
 			'set='. encodeMachineTagArgument($set_id)
 		);
-		if($page > 1)
-			$params[] = 'p='. urlencode($page);
+
+		$prevpage = $page;
+		if($photo_number == 1)
+			$prevpage--;
+
+		if($prevpage > 1)
+			$params[] = 'p='. urlencode($prevpage);
 
 		$link = './?'. implode('&', $params);
 ?>
@@ -105,8 +110,13 @@
 			'id='. urlencode((string)$context->nextphoto["id"]),
 			'set='. encodeMachineTagArgument($set_id)
 		);
-		if($page > 1)
-			$params[] = 'p='. urlencode($page);
+
+		$nextpage = $page;
+		if($photo_number == $photos_per_page)
+			$nextpage++;
+
+		if($nextpage > 1)
+			$params[] = 'p='. urlencode($nextpage);
 
 		$link = './?'. implode('&', $params);
 ?>
