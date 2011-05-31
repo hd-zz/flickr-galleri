@@ -59,7 +59,6 @@
 
 		$xml .= '</context>';
 
-		echo "$xml\n";
 		$context = simplexml_load_string($xml);
 	}
 
