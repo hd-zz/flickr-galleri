@@ -97,7 +97,7 @@
 	}
 	if((string)$context->nextphoto["id"] != "0") {
 		$params = array(
-			'id='. urlencode((string)$context->prevphoto["id"]),
+			'id='. urlencode((string)$context->nextphoto["id"]),
 			'set='. encodeMachineTagArgument($set_id)
 		);
 		if($page > 1)
